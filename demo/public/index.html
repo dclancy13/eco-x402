@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>x402 Demo | Eco</title>
+  <!-- Ethers.js for wallet interaction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.9.0/ethers.umd.min.js"></script>
   <style>
     :root {
       --eco-green: #00D26A;
@@ -47,6 +49,60 @@
       padding: 3rem 0;
       border-bottom: 1px solid var(--eco-border);
       margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .wallet-section {
+      position: absolute;
+      top: 1rem;
+      right: 0;
+    }
+
+    .wallet-btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid var(--eco-border);
+      background: var(--eco-gray);
+      color: var(--eco-text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .wallet-btn:hover {
+      background: var(--eco-gray-light);
+    }
+
+    .wallet-btn.connected {
+      background: rgba(0, 210, 106, 0.15);
+      border-color: var(--eco-green);
+      color: var(--eco-green);
+    }
+
+    .wallet-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--eco-error);
+    }
+
+    .wallet-btn.connected .wallet-indicator {
+      background: var(--eco-green);
+    }
+
+    .network-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(240, 180, 41, 0.15);
+      color: var(--eco-warning);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 0.75rem;
     }
 
     .logo {
@@ -95,6 +151,11 @@
     @media (max-width: 900px) {
       .main-grid {
         grid-template-columns: 1fr;
+      }
+      .wallet-section {
+        position: relative;
+        top: 0;
+        margin-bottom: 1rem;
       }
     }
 
@@ -180,12 +241,6 @@
     .endpoint-path {
       font-family: monospace;
       font-size: 0.95rem;
-    }
-
-    .endpoint-price {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
     }
 
     .price-tag {
@@ -481,6 +536,7 @@
 
     .payment-value {
       font-family: monospace;
+      word-break: break-all;
     }
 
     .modal-actions {
@@ -490,6 +546,17 @@
 
     .modal-actions .btn {
       flex: 1;
+    }
+
+    .wallet-warning {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid var(--eco-error);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: var(--eco-error);
+      font-size: 0.9rem;
     }
 
     /* Spinner */
@@ -522,6 +589,7 @@
       opacity: 0;
       transition: all 0.3s ease;
       z-index: 1001;
+      max-width: 400px;
     }
 
     .toast.visible {
@@ -554,11 +622,18 @@
 <body>
   <div class="container">
     <header>
+      <div class="wallet-section">
+        <button class="wallet-btn" id="walletBtn">
+          <span class="wallet-indicator"></span>
+          <span id="walletText">Connect Wallet</span>
+        </button>
+      </div>
       <div class="logo">
         <div class="logo-icon">⚡</div>
         <h1>x402 Demo</h1>
       </div>
-      <p class="subtitle">Test API monetization with instant USDC payments</p>
+      <p class="subtitle">Test API monetization with real USDC payments</p>
+      <div class="network-badge">🔗 Base Sepolia Testnet</div>
     </header>
 
     <div class="main-grid">
@@ -658,14 +733,14 @@
               <div class="step-number">3</div>
               <div class="step-content">
                 <h4>Sign Payment Authorization</h4>
-                <p>Client signs USDC transfer (gasless)</p>
+                <p>MetaMask signs USDC transfer (gasless)</p>
               </div>
             </div>
             <div class="flow-step" id="step4">
               <div class="step-number">4</div>
               <div class="step-content">
                 <h4>Send Payment & Receive Data</h4>
-                <p>Server settles payment, returns content</p>
+                <p>Server settles payment on-chain</p>
               </div>
             </div>
           </div>
@@ -674,7 +749,7 @@
     </div>
 
     <footer>
-      <p>Powered by <a href="https://eco.com" target="_blank">Eco</a> • <a href="https://x402.org" target="_blank">x402 Protocol</a></p>
+      <p>Powered by <a href="https://eco.com" target="_blank">Eco</a> • <a href="https://x402.org" target="_blank">x402 Protocol</a> • Base Sepolia Testnet</p>
     </footer>
   </div>
 
@@ -684,21 +759,29 @@
       <div class="modal-header">
         <div class="modal-icon">💳</div>
         <h2 class="modal-title">Payment Required</h2>
-        <p style="color: var(--eco-text-muted); margin-top: 0.5rem;">This endpoint requires a USDC payment</p>
+        <p style="color: var(--eco-text-muted); margin-top: 0.5rem;">Sign with MetaMask to pay</p>
+      </div>
+
+      <div class="wallet-warning" id="walletWarning" style="display: none;">
+        ⚠️ Please connect your wallet first
       </div>
 
       <div class="payment-details">
         <div class="payment-row">
           <span class="payment-label">Network</span>
-          <span class="payment-value" id="paymentNetwork">Base</span>
+          <span class="payment-value" id="paymentNetwork">Base Sepolia</span>
         </div>
         <div class="payment-row">
           <span class="payment-label">Asset</span>
-          <span class="payment-value">USDC</span>
+          <span class="payment-value">USDC (Test)</span>
         </div>
         <div class="payment-row">
           <span class="payment-label">Recipient</span>
-          <span class="payment-value" id="paymentRecipient">0xd8dA...6045</span>
+          <span class="payment-value" id="paymentRecipient">0x86cc...6448</span>
+        </div>
+        <div class="payment-row">
+          <span class="payment-label">Your Wallet</span>
+          <span class="payment-value" id="paymentPayer">Not connected</span>
         </div>
         <div class="payment-row">
           <span class="payment-label">Amount</span>
@@ -709,7 +792,7 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" id="cancelPayment">Cancel</button>
         <button class="btn btn-primary" id="confirmPayment">
-          <span>Pay & Continue</span>
+          <span>Sign & Pay</span>
         </button>
       </div>
     </div>
@@ -722,13 +805,52 @@
   </div>
 
   <script>
-    // State
+    // ==========================================================================
+    // CONFIGURATION
+    // ==========================================================================
+
+    // Base Sepolia USDC contract
+    const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+    const CHAIN_ID = 84532; // Base Sepolia
+    const CHAIN_ID_HEX = '0x14a34';
+
+    // EIP-712 Domain for USDC TransferWithAuthorization
+    const EIP712_DOMAIN = {
+      name: 'USD Coin',
+      version: '2',
+      chainId: CHAIN_ID,
+      verifyingContract: USDC_ADDRESS
+    };
+
+    const TRANSFER_WITH_AUTHORIZATION_TYPE = {
+      TransferWithAuthorization: [
+        { name: 'from', type: 'address' },
+        { name: 'to', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'validAfter', type: 'uint256' },
+        { name: 'validBefore', type: 'uint256' },
+        { name: 'nonce', type: 'bytes32' }
+      ]
+    };
+
+    // ==========================================================================
+    // STATE
+    // ==========================================================================
+
     let selectedEndpoint = '/api/public';
     let selectedMethod = 'GET';
     let selectedPrice = 'free';
     let paymentRequirements = null;
+    let connectedWallet = null;
+    let provider = null;
+    let signer = null;
 
-    // DOM Elements
+    // ==========================================================================
+    // DOM ELEMENTS
+    // ==========================================================================
+
+    const walletBtn = document.getElementById('walletBtn');
+    const walletText = document.getElementById('walletText');
     const endpointList = document.getElementById('endpointList');
     const selectedEndpointInput = document.getElementById('selectedEndpoint');
     const bodyGroup = document.getElementById('bodyGroup');
@@ -738,19 +860,101 @@
     const statusBadge = document.getElementById('statusBadge');
     const responseBodyEl = document.getElementById('responseBody');
     const paymentModal = document.getElementById('paymentModal');
+    const walletWarning = document.getElementById('walletWarning');
     const cancelPaymentBtn = document.getElementById('cancelPayment');
     const confirmPaymentBtn = document.getElementById('confirmPayment');
     const toast = document.getElementById('toast');
 
-    // Mock wallet for demo
-    const MOCK_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f5e321';
+    // ==========================================================================
+    // WALLET CONNECTION
+    // ==========================================================================
 
-    // Select endpoint
+    walletBtn.addEventListener('click', async () => {
+      if (connectedWallet) {
+        // Disconnect
+        connectedWallet = null;
+        provider = null;
+        signer = null;
+        walletBtn.classList.remove('connected');
+        walletText.textContent = 'Connect Wallet';
+        showToast('Wallet disconnected', 'success');
+        return;
+      }
+
+      if (!window.ethereum) {
+        showToast('Please install MetaMask!', 'error');
+        return;
+      }
+
+      try {
+        // Request account access
+        provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send('eth_requestAccounts', []);
+
+        if (accounts.length === 0) {
+          showToast('No accounts found', 'error');
+          return;
+        }
+
+        // Check/switch to Base Sepolia
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: CHAIN_ID_HEX }]
+          });
+        } catch (switchError) {
+          // Chain not added, add it
+          if (switchError.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: CHAIN_ID_HEX,
+                chainName: 'Base Sepolia',
+                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://sepolia.base.org'],
+                blockExplorerUrls: ['https://sepolia.basescan.org']
+              }]
+            });
+          } else {
+            throw switchError;
+          }
+        }
+
+        signer = await provider.getSigner();
+        connectedWallet = await signer.getAddress();
+
+        walletBtn.classList.add('connected');
+        walletText.textContent = connectedWallet.slice(0, 6) + '...' + connectedWallet.slice(-4);
+
+        showToast('Wallet connected!', 'success');
+      } catch (error) {
+        console.error('Wallet connection error:', error);
+        showToast('Failed to connect wallet', 'error');
+      }
+    });
+
+    // Listen for account changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length === 0) {
+          connectedWallet = null;
+          walletBtn.classList.remove('connected');
+          walletText.textContent = 'Connect Wallet';
+        } else {
+          connectedWallet = accounts[0];
+          walletText.textContent = connectedWallet.slice(0, 6) + '...' + connectedWallet.slice(-4);
+        }
+      });
+    }
+
+    // ==========================================================================
+    // ENDPOINT SELECTION
+    // ==========================================================================
+
     endpointList.addEventListener('click', (e) => {
       const endpoint = e.target.closest('.endpoint');
       if (!endpoint) return;
 
-      // Update selection
       document.querySelectorAll('.endpoint').forEach(el => el.classList.remove('selected'));
       endpoint.classList.add('selected');
 
@@ -761,11 +965,13 @@
       selectedEndpointInput.value = selectedEndpoint;
       bodyGroup.style.display = selectedMethod === 'POST' ? 'block' : 'none';
 
-      // Reset flow
       resetFlow();
     });
 
-    // Send request
+    // ==========================================================================
+    // SEND REQUEST
+    // ==========================================================================
+
     sendRequestBtn.addEventListener('click', async () => {
       resetFlow();
       setStep(1, 'active');
@@ -789,7 +995,6 @@
         setStep(1, 'completed');
 
         if (response.status === 402) {
-          // Payment required
           setStep(2, 'active');
 
           const paymentHeader = response.headers.get('x-payment-required');
@@ -801,7 +1006,6 @@
           showResponse(402, data);
           setStep(2, 'completed');
         } else {
-          // Success (free endpoint)
           showResponse(response.status, data);
           showToast('Request successful!', 'success');
         }
@@ -814,27 +1018,35 @@
       }
     });
 
-    // Payment modal
+    // ==========================================================================
+    // PAYMENT MODAL
+    // ==========================================================================
+
     cancelPaymentBtn.addEventListener('click', () => {
       hidePaymentModal();
       resetFlow();
     });
 
     confirmPaymentBtn.addEventListener('click', async () => {
+      if (!connectedWallet) {
+        showToast('Please connect your wallet first!', 'error');
+        return;
+      }
+
       setStep(3, 'active');
       confirmPaymentBtn.disabled = true;
-      confirmPaymentBtn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
-
-      // Simulate signing delay
-      await sleep(500);
-      setStep(3, 'completed');
-      setStep(4, 'active');
-
-      // Create mock payment
-      const payment = createMockPayment(paymentRequirements);
-      const encodedPayment = btoa(JSON.stringify(payment));
+      confirmPaymentBtn.innerHTML = '<div class="spinner"></div><span>Signing...</span>';
 
       try {
+        // Create the payment authorization
+        const payment = await createSignedPayment(paymentRequirements);
+        const encodedPayment = btoa(JSON.stringify(payment));
+
+        setStep(3, 'completed');
+        setStep(4, 'active');
+        confirmPaymentBtn.innerHTML = '<div class="spinner"></div><span>Settling...</span>';
+
+        // Send payment
         const options = {
           method: selectedMethod,
           headers: {
@@ -859,39 +1071,65 @@
         } else {
           setStep(4, 'error');
           showResponse(response.status, data);
-          showToast('Payment failed', 'error');
+          showToast(data.message || 'Payment failed', 'error');
         }
       } catch (error) {
+        console.error('Payment error:', error);
         hidePaymentModal();
-        setStep(4, 'error');
+        setStep(3, 'error');
         showResponse(500, { error: error.message });
-        showToast('Payment failed', 'error');
+        showToast(error.message || 'Payment failed', 'error');
       } finally {
         confirmPaymentBtn.disabled = false;
-        confirmPaymentBtn.innerHTML = '<span>Pay & Continue</span>';
+        confirmPaymentBtn.innerHTML = '<span>Sign & Pay</span>';
       }
     });
 
-    // Helper functions
-    function createMockPayment(requirements) {
+    // ==========================================================================
+    // EIP-712 SIGNING
+    // ==========================================================================
+
+    async function createSignedPayment(requirements) {
       const now = Math.floor(Date.now() / 1000);
+      const nonce = '0x' + randomHex(64);
+
+      const authorization = {
+        from: connectedWallet,
+        to: requirements.payTo,
+        value: BigInt(requirements.maxAmountRequired),
+        validAfter: BigInt(0),
+        validBefore: BigInt(now + 3600), // Valid for 1 hour
+        nonce: nonce
+      };
+
+      // Sign the EIP-712 typed data
+      const signature = await signer.signTypedData(
+        EIP712_DOMAIN,
+        TRANSFER_WITH_AUTHORIZATION_TYPE,
+        authorization
+      );
+
       return {
         x402Version: '2.0',
         scheme: 'exact',
         network: requirements.network,
         payload: {
-          signature: '0x' + 'ab'.repeat(65),
+          signature: signature,
           authorization: {
-            from: MOCK_WALLET,
-            to: requirements.payTo,
-            value: requirements.maxAmountRequired,
-            validAfter: now - 60,
-            validBefore: now + 3600,
-            nonce: '0x' + randomHex(64)
+            from: authorization.from,
+            to: authorization.to,
+            value: authorization.value.toString(),
+            validAfter: Number(authorization.validAfter),
+            validBefore: Number(authorization.validBefore),
+            nonce: authorization.nonce
           }
         }
       };
     }
+
+    // ==========================================================================
+    // HELPER FUNCTIONS
+    // ==========================================================================
 
     function randomHex(length) {
       const chars = '0123456789abcdef';
@@ -903,11 +1141,17 @@
     }
 
     function showPaymentModal(requirements) {
-      document.getElementById('paymentNetwork').textContent = 'Base';
+      document.getElementById('paymentNetwork').textContent = 'Base Sepolia';
       document.getElementById('paymentRecipient').textContent =
         requirements.payTo.slice(0, 6) + '...' + requirements.payTo.slice(-4);
+      document.getElementById('paymentPayer').textContent = connectedWallet
+        ? connectedWallet.slice(0, 6) + '...' + connectedWallet.slice(-4)
+        : 'Not connected';
       document.getElementById('paymentAmount').textContent =
-        '$' + (parseInt(requirements.maxAmountRequired) / 1000000).toFixed(6);
+        '$' + (parseInt(requirements.maxAmountRequired) / 1000000).toFixed(6) + ' USDC';
+
+      walletWarning.style.display = connectedWallet ? 'none' : 'block';
+      confirmPaymentBtn.disabled = !connectedWallet;
 
       paymentModal.classList.add('visible');
     }
@@ -918,10 +1162,8 @@
 
     function showResponse(status, data) {
       responsePanel.style.display = 'block';
-
       statusBadge.textContent = status + ' ' + getStatusText(status);
       statusBadge.className = 'status-badge ' + getStatusClass(status);
-
       responseBodyEl.textContent = JSON.stringify(data, null, 2);
     }
 
@@ -937,28 +1179,18 @@
     }
 
     function setStep(step, state) {
-      const el = document.getElementById('step' + step);
-      el.className = 'flow-step ' + state;
+      document.getElementById('step' + step).className = 'flow-step ' + state;
     }
 
     function resetFlow() {
-      for (let i = 1; i <= 4; i++) {
-        setStep(i, '');
-      }
+      for (let i = 1; i <= 4; i++) setStep(i, '');
     }
 
     function showToast(message, type) {
       document.getElementById('toastIcon').textContent = type === 'success' ? '✓' : '✗';
       document.getElementById('toastMessage').textContent = message;
       toast.className = 'toast visible ' + type;
-
-      setTimeout(() => {
-        toast.classList.remove('visible');
-      }, 3000);
-    }
-
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
+      setTimeout(() => toast.classList.remove('visible'), 4000);
     }
 
     // Initialize

@@ -23,13 +23,20 @@ app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
-const FACILITATOR_URL = process.env.FACILITATOR_URL || 'http://localhost:4020';
+
+// Production: Use real Coinbase facilitator
+const FACILITATOR_URL = process.env.FACILITATOR_URL || 'https://x402.org/facilitator';
 const FACILITATOR: FacilitatorConfig = { url: FACILITATOR_URL };
 
-// Demo recipient wallet (use any address for testing)
-const RECIPIENT = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'; // vitalik.eth for demo
+// Your wallet to receive payments
+const RECIPIENT = process.env.RECIPIENT || '0x86cc9d3948Ad77B2CAC3A5a2d1301840174A6448';
+
+// Network: Base Sepolia testnet for testing with test USDC
+const NETWORK = process.env.NETWORK || 'eip155:84532';
 
 console.log(`[Demo Server] Using facilitator at: ${FACILITATOR_URL}`);
+console.log(`[Demo Server] Network: ${NETWORK}`);
+console.log(`[Demo Server] Recipient: ${RECIPIENT}`);
 
 // ============================================================================
 // FREE ENDPOINTS (no payment required)
@@ -90,6 +97,7 @@ app.use(
     recipient: RECIPIENT,
     price: '0.001', // Default price for premium endpoints
     description: 'Premium API access',
+    network: NETWORK,
     facilitator: FACILITATOR,
     onPayment: (receipt) => {
       console.log(`\n💰 [Payment Received]`);
@@ -129,6 +137,7 @@ app.use(
     recipient: RECIPIENT,
     price: '0.005', // $0.005 for fortune
     description: 'Premium fortune telling',
+    network: NETWORK,
     facilitator: FACILITATOR,
   })
 );
@@ -159,6 +168,7 @@ app.use(
   '/api/ai',
   x402({
     recipient: RECIPIENT,
+    network: NETWORK,
     routes: [
       { path: '/api/ai/generate', price: '0.01', methods: ['POST'] },
       { path: '/api/ai/analyze', price: '0.02', methods: ['POST'] },
@@ -206,20 +216,25 @@ app.post('/api/ai/analyze', (req: Request, res: Response) => {
 // START SERVER
 // ============================================================================
 
+const isProduction = FACILITATOR_URL.includes('x402.org');
+const networkName = NETWORK === 'eip155:84532' ? 'Base Sepolia (Testnet)' :
+                    NETWORK === 'eip155:8453' ? 'Base Mainnet' : NETWORK;
+
 app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════════════╗
-║                  @eco/x402 Demo Server                         ║
+║            @eco/x402 Demo Server ${isProduction ? '(PRODUCTION)' : '(LOCAL)'}               ║
 ╠════════════════════════════════════════════════════════════════╣
-║  🌐 Web UI:    http://localhost:${PORT}                            ║
-║  Facilitator: ${FACILITATOR_URL.padEnd(36)}       ║
-║  Recipient:  ${RECIPIENT.slice(0, 10)}...${RECIPIENT.slice(-6)}                        ║
+║  🌐 Web UI:     http://localhost:${PORT}                           ║
+║  🔗 Network:    ${networkName.padEnd(33)}      ║
+║  💳 Recipient:  ${RECIPIENT.slice(0, 10)}...${RECIPIENT.slice(-6)}                       ║
+║  🏦 Facilitator: ${(isProduction ? 'Coinbase (x402.org)' : 'Local Mock').padEnd(32)}     ║
 ╠════════════════════════════════════════════════════════════════╣
 ║  Free Endpoints:                                               ║
 ║    GET  /api/public          - Free data                       ║
 ║    GET  /health              - Health check                    ║
 ╠════════════════════════════════════════════════════════════════╣
-║  Paid Endpoints:                                               ║
+║  Paid Endpoints (requires ${networkName.includes('Testnet') ? 'test' : 'real'} USDC):                        ║
 ║    GET  /api/premium/joke    - $0.001                          ║
 ║    GET  /api/premium/fortune - $0.005                          ║
 ║    POST /api/ai/generate     - $0.010                          ║
