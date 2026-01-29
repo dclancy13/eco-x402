@@ -81,6 +81,92 @@ app.use('/api/premium', x402({
 }));
 ```
 
+## Try the Demo
+
+Test the full x402 payment flow locally without real USDC:
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/YOUR_USERNAME/eco-x402.git
+cd eco-x402
+npm install
+```
+
+### 2. Start the Mock Facilitator (Terminal 1)
+
+```bash
+npm run demo:facilitator
+```
+
+This starts a local facilitator on port 4020 that approves all payments.
+
+### 3. Start the Demo Server (Terminal 2)
+
+```bash
+npm run demo:server
+```
+
+This starts an API server on port 3000 with free and paid endpoints.
+
+### 4. Run the Test Client (Terminal 3)
+
+```bash
+npm run demo:client
+```
+
+This demonstrates the complete payment flow:
+1. Request paid endpoint → receive 402 Payment Required
+2. Parse payment requirements from response header
+3. Create signed payment authorization
+4. Retry request with payment → receive content
+
+### Manual Testing with curl
+
+```bash
+# Free endpoint
+curl http://localhost:3000/api/public
+
+# Paid endpoint (returns 402 with payment requirements)
+curl -i http://localhost:3000/api/premium/joke
+```
+
+## Demo vs Production
+
+| Component | Demo Mode | Production |
+|-----------|-----------|------------|
+| **Facilitator** | Mock (localhost:4020) | Coinbase at `https://x402.org/facilitator` |
+| **Wallet signing** | Fake signatures | Real wallet (MetaMask, WalletConnect) |
+| **Network** | Simulated | Base mainnet with real USDC |
+| **Settlement** | Instant approval | On-chain USDC transfer (~2 sec) |
+
+### Production Setup
+
+To go live, simply point to the real Coinbase facilitator:
+
+```typescript
+import { x402 } from '@eco/x402';
+
+app.use('/api/premium', x402({
+  recipient: '0xYourRealWallet',  // Your wallet to receive USDC
+  price: '0.01',
+  // No facilitator config needed - defaults to Coinbase production
+}));
+```
+
+Or explicitly configure:
+
+```typescript
+app.use('/api/premium', x402({
+  recipient: '0xYourRealWallet',
+  price: '0.01',
+  facilitator: {
+    url: 'https://x402.org/facilitator',
+  },
+  network: 'eip155:8453',  // Base mainnet (default)
+}));
+```
+
 ## How It Works
 
 1. Client requests a protected endpoint
@@ -91,18 +177,20 @@ app.use('/api/premium', x402({
 6. Server returns the requested resource
 
 ```
-Client                    Server                    Blockchain
+Client                    Server                    Facilitator
   │                         │                          │
   │─── GET /api/data ──────▶│                          │
   │                         │                          │
   │◀── 402 Payment Required │                          │
-  │    (payment details)    │                          │
+  │    + x-payment-required │                          │
   │                         │                          │
   │─── GET /api/data ──────▶│                          │
-  │    X-PAYMENT: {...}     │                          │
-  │                         │─── settle payment ──────▶│
-  │                         │◀── tx confirmed ─────────│
+  │    + x-payment header   │                          │
+  │                         │─── POST /settle ────────▶│
+  │                         │    (verify & execute)    │
+  │                         │◀── {success, txHash} ────│
   │◀── 200 OK + data ───────│                          │
+  │    + x-payment-response │                          │
 ```
 
 ## Configuration
@@ -116,6 +204,7 @@ Client                    Server                    Blockchain
 | `routes` | `RouteConfig[]` | * | Route-specific pricing |
 | `description` | `string` | No | Description for payment requirements |
 | `network` | `string` | No | CAIP-2 chain ID (default: Base mainnet) |
+| `facilitator` | `FacilitatorConfig` | No | Custom facilitator (default: Coinbase) |
 | `onPayment` | `function` | No | Callback on successful payment |
 | `onError` | `function` | No | Callback on payment failure |
 
@@ -129,6 +218,14 @@ Client                    Server                    Blockchain
 | `price` | `string` | Yes | Price in USD |
 | `description` | `string` | No | Description |
 | `methods` | `string[]` | No | HTTP methods (default: all) |
+
+### FacilitatorConfig
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `url` | `string` | Yes | Facilitator base URL |
+| `apiKey` | `string` | No | Optional API key |
+| `timeout` | `number` | No | Request timeout in ms (default: 30000) |
 
 ## Supported Networks
 
@@ -156,10 +253,21 @@ app.get('/api/premium/data', (req, res) => {
 });
 ```
 
+## x402 Protocol Headers
+
+| Header | Direction | Description |
+|--------|-----------|-------------|
+| `x-payment-required` | Response (402) | Base64 JSON with payment requirements |
+| `x-payment` | Request | Base64 JSON with signed payment authorization |
+| `x-payment-response` | Response (200) | Base64 JSON with settlement confirmation |
+
 ## Client Libraries
+
+To build a client that can pay for x402-protected APIs:
 
 ### JavaScript/TypeScript
 ```typescript
+// Example using the x402 fetch wrapper
 import { wrapFetchWithPayment } from '@x402/fetch';
 
 const paymentFetch = wrapFetchWithPayment({ wallet });
@@ -174,6 +282,24 @@ session = create_payment_session(wallet)
 response = session.get('https://api.example.com/premium/data')
 ```
 
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Build
+npm run build
+
+# Run demo
+npm run demo:facilitator  # Terminal 1
+npm run demo:server       # Terminal 2
+npm run demo:client       # Terminal 3
+```
+
 ## License
 
 MIT
@@ -182,4 +308,3 @@ MIT
 
 - [x402 Protocol Specification](https://x402.org)
 - [Eco Network](https://eco.com)
-- [GitHub](https://github.com/eco/x402-middleware)
