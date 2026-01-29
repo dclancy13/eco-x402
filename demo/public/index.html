@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>x402 Demo | Eco</title>
+  <style>
+    :root {
+      --eco-green: #00D26A;
+      --eco-green-dark: #00B85C;
+      --eco-green-light: #E6FFF2;
+      --eco-dark: #0D1117;
+      --eco-darker: #010409;
+      --eco-gray: #21262D;
+      --eco-gray-light: #30363D;
+      --eco-text: #E6EDF3;
+      --eco-text-muted: #8B949E;
+      --eco-border: #30363D;
+      --eco-success: #00D26A;
+      --eco-warning: #F0B429;
+      --eco-error: #F85149;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--eco-darker);
+      color: var(--eco-text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding: 3rem 0;
+      border-bottom: 1px solid var(--eco-border);
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--eco-green);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: var(--eco-darker);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--eco-green), #00FFB3);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--eco-text-muted);
+      font-size: 1.1rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Main Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--eco-dark);
+      border: 1px solid var(--eco-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--eco-border);
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--eco-gray);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    /* Endpoints List */
+    .endpoint-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .endpoint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      background: var(--eco-gray);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+
+    .endpoint:hover {
+      border-color: var(--eco-green);
+      transform: translateY(-2px);
+    }
+
+    .endpoint.selected {
+      border-color: var(--eco-green);
+      background: rgba(0, 210, 106, 0.1);
+    }
+
+    .endpoint-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .method {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .method.get { background: #238636; }
+    .method.post { background: #1F6FEB; }
+
+    .endpoint-path {
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .endpoint-price {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .price-tag {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .price-tag.free {
+      background: var(--eco-green);
+      color: var(--eco-darker);
+    }
+
+    .price-tag.paid {
+      background: var(--eco-warning);
+      color: var(--eco-darker);
+    }
+
+    /* Request Panel */
+    .request-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-group label {
+      font-size: 0.85rem;
+      color: var(--eco-text-muted);
+      font-weight: 500;
+    }
+
+    .input-group input,
+    .input-group textarea {
+      background: var(--eco-gray);
+      border: 1px solid var(--eco-border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--eco-text);
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+
+    .input-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .input-group input:focus,
+    .input-group textarea:focus {
+      outline: none;
+      border-color: var(--eco-green);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.875rem 1.5rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--eco-green);
+      color: var(--eco-darker);
+    }
+
+    .btn-primary:hover {
+      background: var(--eco-green-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:disabled {
+      background: var(--eco-gray);
+      color: var(--eco-text-muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--eco-gray);
+      color: var(--eco-text);
+      border: 1px solid var(--eco-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--eco-gray-light);
+    }
+
+    /* Response Panel */
+    .response-panel {
+      margin-top: 2rem;
+    }
+
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .status-badge {
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .status-badge.success { background: var(--eco-success); color: var(--eco-darker); }
+    .status-badge.payment { background: var(--eco-warning); color: var(--eco-darker); }
+    .status-badge.error { background: var(--eco-error); color: white; }
+
+    .response-body {
+      background: var(--eco-gray);
+      border-radius: 10px;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Flow Visualization */
+    .flow-section {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--eco-border);
+    }
+
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--eco-gray);
+      border-radius: 10px;
+      opacity: 0.5;
+      transition: all 0.3s ease;
+    }
+
+    .flow-step.active {
+      opacity: 1;
+      border-left: 3px solid var(--eco-green);
+    }
+
+    .flow-step.completed {
+      opacity: 1;
+      border-left: 3px solid var(--eco-success);
+    }
+
+    .flow-step.error {
+      opacity: 1;
+      border-left: 3px solid var(--eco-error);
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background: var(--eco-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .flow-step.completed .step-number {
+      background: var(--eco-success);
+      color: var(--eco-darker);
+    }
+
+    .flow-step.active .step-number {
+      background: var(--eco-green);
+      color: var(--eco-darker);
+    }
+
+    .step-content h4 {
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-content p {
+      font-size: 0.85rem;
+      color: var(--eco-text-muted);
+    }
+
+    /* Payment Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--eco-dark);
+      border: 1px solid var(--eco-border);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.visible .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--eco-warning);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 2rem;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .payment-details {
+      background: var(--eco-gray);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .payment-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--eco-border);
+    }
+
+    .payment-row:last-child {
+      border-bottom: none;
+      padding-top: 0.75rem;
+      font-weight: 600;
+    }
+
+    .payment-label {
+      color: var(--eco-text-muted);
+    }
+
+    .payment-value {
+      font-family: monospace;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--eco-border);
+      border-top-color: var(--eco-green);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 1rem 1.5rem;
+      background: var(--eco-dark);
+      border: 1px solid var(--eco-border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1001;
+    }
+
+    .toast.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success { border-color: var(--eco-success); }
+    .toast.error { border-color: var(--eco-error); }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      margin-top: 3rem;
+      border-top: 1px solid var(--eco-border);
+      color: var(--eco-text-muted);
+    }
+
+    footer a {
+      color: var(--eco-green);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <h1>x402 Demo</h1>
+      </div>
+      <p class="subtitle">Test API monetization with instant USDC payments</p>
+    </header>
+
+    <div class="main-grid">
+      <!-- Endpoints Panel -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🔌</div>
+          <h2 class="card-title">API Endpoints</h2>
+        </div>
+        <div class="endpoint-list" id="endpointList">
+          <!-- Free Endpoints -->
+          <div class="endpoint" data-path="/api/public" data-method="GET" data-price="free">
+            <div class="endpoint-info">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/public</span>
+            </div>
+            <span class="price-tag free">Free</span>
+          </div>
+
+          <!-- Paid Endpoints -->
+          <div class="endpoint" data-path="/api/premium/joke" data-method="GET" data-price="0.001">
+            <div class="endpoint-info">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/premium/joke</span>
+            </div>
+            <span class="price-tag paid">$0.001</span>
+          </div>
+
+          <div class="endpoint" data-path="/api/premium/fortune" data-method="GET" data-price="0.005">
+            <div class="endpoint-info">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/premium/fortune</span>
+            </div>
+            <span class="price-tag paid">$0.005</span>
+          </div>
+
+          <div class="endpoint" data-path="/api/ai/generate" data-method="POST" data-price="0.01">
+            <div class="endpoint-info">
+              <span class="method post">POST</span>
+              <span class="endpoint-path">/api/ai/generate</span>
+            </div>
+            <span class="price-tag paid">$0.01</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request Panel -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📤</div>
+          <h2 class="card-title">Make Request</h2>
+        </div>
+        <div class="request-panel">
+          <div class="input-group">
+            <label>Selected Endpoint</label>
+            <input type="text" id="selectedEndpoint" value="/api/public" readonly>
+          </div>
+
+          <div class="input-group" id="bodyGroup" style="display: none;">
+            <label>Request Body (JSON)</label>
+            <textarea id="requestBody">{"prompt": "Write a haiku about payments"}</textarea>
+          </div>
+
+          <button class="btn btn-primary" id="sendRequest">
+            <span>Send Request</span>
+          </button>
+        </div>
+
+        <!-- Response -->
+        <div class="response-panel" id="responsePanel" style="display: none;">
+          <div class="response-header">
+            <h3>Response</h3>
+            <span class="status-badge" id="statusBadge">200 OK</span>
+          </div>
+          <pre class="response-body" id="responseBody"></pre>
+        </div>
+
+        <!-- Flow Visualization -->
+        <div class="flow-section">
+          <h3 style="margin-bottom: 1rem;">Payment Flow</h3>
+          <div class="flow-steps" id="flowSteps">
+            <div class="flow-step" id="step1">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4>Request Protected Resource</h4>
+                <p>Client requests the paid endpoint</p>
+              </div>
+            </div>
+            <div class="flow-step" id="step2">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4>Receive 402 Payment Required</h4>
+                <p>Server returns payment requirements</p>
+              </div>
+            </div>
+            <div class="flow-step" id="step3">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h4>Sign Payment Authorization</h4>
+                <p>Client signs USDC transfer (gasless)</p>
+              </div>
+            </div>
+            <div class="flow-step" id="step4">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h4>Send Payment & Receive Data</h4>
+                <p>Server settles payment, returns content</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Powered by <a href="https://eco.com" target="_blank">Eco</a> • <a href="https://x402.org" target="_blank">x402 Protocol</a></p>
+    </footer>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">💳</div>
+        <h2 class="modal-title">Payment Required</h2>
+        <p style="color: var(--eco-text-muted); margin-top: 0.5rem;">This endpoint requires a USDC payment</p>
+      </div>
+
+      <div class="payment-details">
+        <div class="payment-row">
+          <span class="payment-label">Network</span>
+          <span class="payment-value" id="paymentNetwork">Base</span>
+        </div>
+        <div class="payment-row">
+          <span class="payment-label">Asset</span>
+          <span class="payment-value">USDC</span>
+        </div>
+        <div class="payment-row">
+          <span class="payment-label">Recipient</span>
+          <span class="payment-value" id="paymentRecipient">0xd8dA...6045</span>
+        </div>
+        <div class="payment-row">
+          <span class="payment-label">Amount</span>
+          <span class="payment-value" id="paymentAmount">$0.001</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelPayment">Cancel</button>
+        <button class="btn btn-primary" id="confirmPayment">
+          <span>Pay & Continue</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span id="toastIcon">✓</span>
+    <span id="toastMessage">Success!</span>
+  </div>
+
+  <script>
+    // State
+    let selectedEndpoint = '/api/public';
+    let selectedMethod = 'GET';
+    let selectedPrice = 'free';
+    let paymentRequirements = null;
+
+    // DOM Elements
+    const endpointList = document.getElementById('endpointList');
+    const selectedEndpointInput = document.getElementById('selectedEndpoint');
+    const bodyGroup = document.getElementById('bodyGroup');
+    const requestBody = document.getElementById('requestBody');
+    const sendRequestBtn = document.getElementById('sendRequest');
+    const responsePanel = document.getElementById('responsePanel');
+    const statusBadge = document.getElementById('statusBadge');
+    const responseBodyEl = document.getElementById('responseBody');
+    const paymentModal = document.getElementById('paymentModal');
+    const cancelPaymentBtn = document.getElementById('cancelPayment');
+    const confirmPaymentBtn = document.getElementById('confirmPayment');
+    const toast = document.getElementById('toast');
+
+    // Mock wallet for demo
+    const MOCK_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f5e321';
+
+    // Select endpoint
+    endpointList.addEventListener('click', (e) => {
+      const endpoint = e.target.closest('.endpoint');
+      if (!endpoint) return;
+
+      // Update selection
+      document.querySelectorAll('.endpoint').forEach(el => el.classList.remove('selected'));
+      endpoint.classList.add('selected');
+
+      selectedEndpoint = endpoint.dataset.path;
+      selectedMethod = endpoint.dataset.method;
+      selectedPrice = endpoint.dataset.price;
+
+      selectedEndpointInput.value = selectedEndpoint;
+      bodyGroup.style.display = selectedMethod === 'POST' ? 'block' : 'none';
+
+      // Reset flow
+      resetFlow();
+    });
+
+    // Send request
+    sendRequestBtn.addEventListener('click', async () => {
+      resetFlow();
+      setStep(1, 'active');
+
+      sendRequestBtn.disabled = true;
+      sendRequestBtn.innerHTML = '<div class="spinner"></div><span>Sending...</span>';
+
+      try {
+        const options = {
+          method: selectedMethod,
+          headers: { 'Content-Type': 'application/json' }
+        };
+
+        if (selectedMethod === 'POST') {
+          options.body = requestBody.value;
+        }
+
+        const response = await fetch(selectedEndpoint, options);
+        const data = await response.json();
+
+        setStep(1, 'completed');
+
+        if (response.status === 402) {
+          // Payment required
+          setStep(2, 'active');
+
+          const paymentHeader = response.headers.get('x-payment-required');
+          if (paymentHeader) {
+            paymentRequirements = JSON.parse(atob(paymentHeader))[0];
+            showPaymentModal(paymentRequirements);
+          }
+
+          showResponse(402, data);
+          setStep(2, 'completed');
+        } else {
+          // Success (free endpoint)
+          showResponse(response.status, data);
+          showToast('Request successful!', 'success');
+        }
+      } catch (error) {
+        showResponse(500, { error: error.message });
+        showToast('Request failed', 'error');
+      } finally {
+        sendRequestBtn.disabled = false;
+        sendRequestBtn.innerHTML = '<span>Send Request</span>';
+      }
+    });
+
+    // Payment modal
+    cancelPaymentBtn.addEventListener('click', () => {
+      hidePaymentModal();
+      resetFlow();
+    });
+
+    confirmPaymentBtn.addEventListener('click', async () => {
+      setStep(3, 'active');
+      confirmPaymentBtn.disabled = true;
+      confirmPaymentBtn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
+
+      // Simulate signing delay
+      await sleep(500);
+      setStep(3, 'completed');
+      setStep(4, 'active');
+
+      // Create mock payment
+      const payment = createMockPayment(paymentRequirements);
+      const encodedPayment = btoa(JSON.stringify(payment));
+
+      try {
+        const options = {
+          method: selectedMethod,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-payment': encodedPayment
+          }
+        };
+
+        if (selectedMethod === 'POST') {
+          options.body = requestBody.value;
+        }
+
+        const response = await fetch(selectedEndpoint, options);
+        const data = await response.json();
+
+        hidePaymentModal();
+
+        if (response.ok) {
+          setStep(4, 'completed');
+          showResponse(response.status, data);
+          showToast('Payment successful! Content unlocked.', 'success');
+        } else {
+          setStep(4, 'error');
+          showResponse(response.status, data);
+          showToast('Payment failed', 'error');
+        }
+      } catch (error) {
+        hidePaymentModal();
+        setStep(4, 'error');
+        showResponse(500, { error: error.message });
+        showToast('Payment failed', 'error');
+      } finally {
+        confirmPaymentBtn.disabled = false;
+        confirmPaymentBtn.innerHTML = '<span>Pay & Continue</span>';
+      }
+    });
+
+    // Helper functions
+    function createMockPayment(requirements) {
+      const now = Math.floor(Date.now() / 1000);
+      return {
+        x402Version: '2.0',
+        scheme: 'exact',
+        network: requirements.network,
+        payload: {
+          signature: '0x' + 'ab'.repeat(65),
+          authorization: {
+            from: MOCK_WALLET,
+            to: requirements.payTo,
+            value: requirements.maxAmountRequired,
+            validAfter: now - 60,
+            validBefore: now + 3600,
+            nonce: '0x' + randomHex(64)
+          }
+        }
+      };
+    }
+
+    function randomHex(length) {
+      const chars = '0123456789abcdef';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return result;
+    }
+
+    function showPaymentModal(requirements) {
+      document.getElementById('paymentNetwork').textContent = 'Base';
+      document.getElementById('paymentRecipient').textContent =
+        requirements.payTo.slice(0, 6) + '...' + requirements.payTo.slice(-4);
+      document.getElementById('paymentAmount').textContent =
+        '$' + (parseInt(requirements.maxAmountRequired) / 1000000).toFixed(6);
+
+      paymentModal.classList.add('visible');
+    }
+
+    function hidePaymentModal() {
+      paymentModal.classList.remove('visible');
+    }
+
+    function showResponse(status, data) {
+      responsePanel.style.display = 'block';
+
+      statusBadge.textContent = status + ' ' + getStatusText(status);
+      statusBadge.className = 'status-badge ' + getStatusClass(status);
+
+      responseBodyEl.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function getStatusText(status) {
+      const texts = { 200: 'OK', 402: 'Payment Required', 500: 'Error' };
+      return texts[status] || 'Unknown';
+    }
+
+    function getStatusClass(status) {
+      if (status === 200) return 'success';
+      if (status === 402) return 'payment';
+      return 'error';
+    }
+
+    function setStep(step, state) {
+      const el = document.getElementById('step' + step);
+      el.className = 'flow-step ' + state;
+    }
+
+    function resetFlow() {
+      for (let i = 1; i <= 4; i++) {
+        setStep(i, '');
+      }
+    }
+
+    function showToast(message, type) {
+      document.getElementById('toastIcon').textContent = type === 'success' ? '✓' : '✗';
+      document.getElementById('toastMessage').textContent = message;
+      toast.className = 'toast visible ' + type;
+
+      setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 3000);
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Initialize
+    document.querySelector('.endpoint').classList.add('selected');
+  </script>
+</body>
+</html>

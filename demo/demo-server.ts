@@ -8,11 +8,19 @@
  */
 
 import express, { Request, Response } from 'express';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { x402 } from '../src/index.js';
 import type { FacilitatorConfig } from '../src/types/index.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const app = express();
 app.use(express.json());
+
+// Serve static frontend
+app.use(express.static(join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 const FACILITATOR_URL = process.env.FACILITATOR_URL || 'http://localhost:4020';
@@ -27,13 +35,19 @@ console.log(`[Demo Server] Using facilitator at: ${FACILITATOR_URL}`);
 // FREE ENDPOINTS (no payment required)
 // ============================================================================
 
+// Serve frontend UI at root
 app.get('/', (_req: Request, res: Response) => {
+  res.sendFile(join(__dirname, 'public', 'index.html'));
+});
+
+// API info endpoint
+app.get('/api', (_req: Request, res: Response) => {
   res.json({
     name: '@eco/x402 Demo Server',
     version: '1.0.0',
     endpoints: {
       free: [
-        'GET / - This info page',
+        'GET /api - This info page',
         'GET /health - Health check',
         'GET /api/public - Free public data',
       ],
@@ -42,11 +56,6 @@ app.get('/', (_req: Request, res: Response) => {
         'GET /api/premium/fortune - $0.005 - Get your fortune',
         'POST /api/ai/generate - $0.01 - AI text generation',
       ],
-    },
-    testing: {
-      step1: 'Start the mock facilitator: npx ts-node demo/mock-facilitator.ts',
-      step2: 'Start this server: npx ts-node demo/demo-server.ts',
-      step3: 'Use the test client: npx ts-node demo/test-client.ts',
     },
   });
 });
@@ -202,14 +211,13 @@ app.listen(PORT, () => {
 ╔════════════════════════════════════════════════════════════════╗
 ║                  @eco/x402 Demo Server                         ║
 ╠════════════════════════════════════════════════════════════════╣
-║  Server:     http://localhost:${PORT}                              ║
-║  Facilitator: ${FACILITATOR_URL.padEnd(35)}        ║
+║  🌐 Web UI:    http://localhost:${PORT}                            ║
+║  Facilitator: ${FACILITATOR_URL.padEnd(36)}       ║
 ║  Recipient:  ${RECIPIENT.slice(0, 10)}...${RECIPIENT.slice(-6)}                        ║
 ╠════════════════════════════════════════════════════════════════╣
 ║  Free Endpoints:                                               ║
-║    GET  /                  - API info                          ║
-║    GET  /health            - Health check                      ║
-║    GET  /api/public        - Free data                         ║
+║    GET  /api/public          - Free data                       ║
+║    GET  /health              - Health check                    ║
 ╠════════════════════════════════════════════════════════════════╣
 ║  Paid Endpoints:                                               ║
 ║    GET  /api/premium/joke    - $0.001                          ║
@@ -218,9 +226,7 @@ app.listen(PORT, () => {
 ║    POST /api/ai/analyze      - $0.020                          ║
 ╚════════════════════════════════════════════════════════════════╝
 
-Try:
-  curl http://localhost:${PORT}/api/public       (free)
-  curl http://localhost:${PORT}/api/premium/joke (requires payment - returns 402)
+Open http://localhost:${PORT} in your browser to try the demo UI!
   `);
 });
 
